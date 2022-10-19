@@ -39,7 +39,7 @@ class Client {
         }
     }
 
-    protected function elaborateResponse(\Psr\Http\Message\ResponseInterface $response) {
+    protected function elaborateResponse($uri, \Psr\Http\Message\ResponseInterface $response) {
         if($response->getStatusCode() == 200) {
             $xml = $this->parseXML($response->getBody());
             return $xml;
@@ -62,7 +62,7 @@ class Client {
 
     public function get($uri, $params = []) {
         $response = $this->client->get($uri, $this->buildOptions($params));
-        return $this->elaborateResponse($response);
+        return $this->elaborateResponse($uri, $response);
     }
 
     public function post($uri, $body, $params = []) {
