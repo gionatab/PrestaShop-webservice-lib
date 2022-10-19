@@ -21,7 +21,7 @@ class Client {
     public function __construct($base_uri, $key)
     {
         $this->key = $key;
-        $base_uri = trim($base_uri, '/').'/api';
+        $base_uri = trim($base_uri, '/').'/api/';
         $this->client = new \GuzzleHttp\Client(['base_uri' => $base_uri]);
         $this->lastRequestMethod = '';
         $this->lastRequestUri = '';
