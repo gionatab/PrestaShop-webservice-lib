@@ -6,7 +6,11 @@ use Up3Up\PrestashopClient\Exceptions\PrestashopResponseException;
 
 class Client {
     
-    /** Un'istanza di un client GuzzleHttp */
+    /**
+     * Un'istanza di un client GuzzleHttp 
+     *
+     * @var \GuzzleHttp\Client
+     */
     protected $client;
 
     /** La chiave di autenticazione per l'API */
@@ -106,6 +110,12 @@ class Client {
     }
 
     public function post($uri, $body, $params = []) {
+        $this->lastRequestMethod = 'POST';
+        $this->lastRequestUri = $uri;
+        $options = $this->buildOptions($params);
+        $options['body'] = $body;
+        $response = $this->client->post($uri, $options);
+        return $this->elaborateResponse($response);
     }
 
     public function put($uri, $body, $params = []) {
