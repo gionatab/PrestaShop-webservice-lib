@@ -1,5 +1,5 @@
 {
-    "name": "up3up/connettore-woocommerce",
+    "name": "up3up/client-prestashop",
     "require": {
         "guzzlehttp/guzzle": "^7.0"
     },
