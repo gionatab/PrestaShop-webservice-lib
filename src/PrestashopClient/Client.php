@@ -50,8 +50,8 @@ class Client {
         else {      
             try {
                 $xml = $this->parseXML($response->getBody());
-                if(isset($xml->prestashop->errors->error->message)) {
-                    $message = (string) $xml->prestashop->errors->error->message;
+                if(isset($xml->errors->error->message)) {
+                    $message = (string) $xml->errors->error->message;
                 }
             } catch (PrestashopResponseException $e){
                 $message = 'Risposta senza contenuto.';
@@ -80,6 +80,7 @@ class Client {
     protected function buildOptions($params = []) {
         $options = [
             'auth' => [$this->key, '']
+            'http_errors' => false //Disattiva eccezioni della libreria, la gestiamo noi.
         ];
         if(!empty($params)) {
             $options['query'] = $params;
