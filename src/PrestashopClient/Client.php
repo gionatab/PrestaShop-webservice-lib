@@ -22,6 +22,13 @@ class Client {
     /** Viene salvata l'ultima risorsa richiesta, es. categories/20 */
     protected $lastRequestUri;
 
+    /**
+     * Lista di codici di stato HTTP che sono considerati come positivi, esempio 200 e 201.
+     *
+     * @var int[]
+     */
+    protected $positiveStatusCodes;
+
     public function __construct($base_uri, $key)
     {
         $this->key = $key;
@@ -29,7 +36,10 @@ class Client {
         $this->client = new \GuzzleHttp\Client(['base_uri' => $base_uri]);
         $this->lastRequestMethod = '';
         $this->lastRequestUri = '';
-        
+        $this->positiveStatusCodes = [
+            200,
+            201
+        ];
     }
 
     /**
@@ -69,6 +79,7 @@ class Client {
      */
     protected function elaborateResponse(\Psr\Http\Message\ResponseInterface $response) {
         $error = false;
+        $message = 'UNKNOWN';
         if($response->getStatusCode() == 404) {
             return null;
         }
@@ -84,7 +95,7 @@ class Client {
                 $error = true;
             }
         }
-        if($response->getStatusCode() == 200 && !$error) {
+        if(in_array($response->getStatusCode(), $this->positiveStatusCodes) && !$error) {
             return $xml;
         }
         else {      
