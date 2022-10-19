@@ -1,8 +1,8 @@
 <?php
-namespace PrestashopClient\Classes;
+namespace Up3Up\PrestashopClient\Classes;
 
-use PrestashopClient\Exceptions\PrestashopClientException;
-use PrestashopClient\Exceptions\PrestashopResponseException;
+use Up3Up\PrestashopClient\Exceptions\PrestashopClientException;
+use Up3Up\PrestashopClient\Exceptions\PrestashopResponseException;
 
 class Client {
     protected $client;

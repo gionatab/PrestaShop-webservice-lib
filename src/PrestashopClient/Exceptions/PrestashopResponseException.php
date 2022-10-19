@@ -1,5 +1,5 @@
 <?php
-namespace PrestashopClient\Exceptions;
+namespace Up3Up\PrestashopClient\Exceptions;
 
 use Exception;
 
