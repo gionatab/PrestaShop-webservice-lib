@@ -1,22 +1,9 @@
 {
-    "name": "up3up/prestashop-webservice-lib",
-    "authors": [
-        {
-            "name": "Gionata Bonazzi",
-            "email": "gionata.bonazzi@up3up.it"
-        },
-        {
-            "name": "PrestaShop SA",
-            "email": "contact@prestashop.com"
-        }
-    ],
-    "autoload": {
-        "Up3Up\\PSWebServiceLibrary\\": "src/PSWebServiceLibrary"
-    },
+    "name": "up3up/connettore-woocommerce",
     "require": {
-        "php": ">= 7.3.0",
-        "ext-curl": "*",
-        "ext-libxml": "*",
-        "ext-simplexml": "*"
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {"Up3Up\\PrestashopClient\\": ["src/PrestashopClient"]}
     }
 }
