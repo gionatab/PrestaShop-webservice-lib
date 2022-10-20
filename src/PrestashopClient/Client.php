@@ -83,6 +83,10 @@ class Client {
         if($response->getStatusCode() == 404) {
             return null;
         }
+        /* In alcuni casi come richieste DELETE, la risposta è 200 OK senza contenuto, quindi se non ci aspettiamo niente nel body (Content-Length è zero) e riceviamo un OK allora la risposta è completata correttamente. */
+        else if($response->getStatusCode() == 200 && isset($response->getHeader('Content-Length')[0]) && $response->getHeader('Content-Length')[0] == 0) {
+            return null;
+        }
         else {
             try {
                 $xml = $this->parseXML($response->getBody());
