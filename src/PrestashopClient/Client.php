@@ -120,21 +120,29 @@ class Client {
         return $this->elaborateResponse($response);
     }
 
-    public function post($uri, $body, $params = []) {
+    public function post($uri, $body) {
         $this->lastRequestMethod = 'POST';
         $this->lastRequestUri = $uri;
-        $options = $this->buildOptions($params);
+        $options = $this->buildOptions();
         $options['body'] = $body;
         $response = $this->client->post($uri, $options);
         return $this->elaborateResponse($response);
     }
 
-    public function put($uri, $body, $params = []) {
-        
+    public function put($uri, $body) {
+        $this->lastRequestMethod = 'PUT';
+        $this->lastRequestUri = $uri;
+        $options = $this->buildOptions();
+        $options['body'] = $body;
+        $response = $this->client->put($uri, $options);
+        return $this->elaborateResponse($response);
     }
 
     public function delete($uri) {
-
+        $this->lastRequestMethod = 'DELETE';
+        $this->lastRequestUri = $uri;
+        $response = $this->client->delete($uri, $this->buildOptions());
+        return $this->elaborateResponse($response);
     }
 
     protected function buildOptions($params = []) {
