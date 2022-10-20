@@ -1,11 +1,14 @@
 <?php
+
 namespace Up3Up\PrestashopClient;
 
+use SimpleXMLElement;
 use Up3Up\PrestashopClient\Exceptions\PrestashopClientException;
 use Up3Up\PrestashopClient\Exceptions\PrestashopResponseException;
 
-class Client {
-    
+class Client
+{
+
     /**
      * Un'istanza di un client GuzzleHttp 
      *
@@ -13,33 +16,43 @@ class Client {
      */
     protected $client;
 
-    /** La chiave di autenticazione per l'API */
+    /**
+     * La chiave di autenticazione per l'API
+     *
+     * @var string
+     */
     protected $key;
 
-    /** Viene salvato l'ultimo metodo usato, es. GET */
+    /**
+     * Viene salvato l'ultimo metodo usato, es. GET
+     *
+     * @var string
+     */
     protected $lastRequestMethod;
 
-    /** Viene salvata l'ultima risorsa richiesta, es. categories/20 */
+    /**
+     * Viene salvata l'ultima risorsa richiesta, es. categories/20
+     *
+     * @var string
+     */
     protected $lastRequestUri;
 
     /**
-     * Lista di codici di stato HTTP che sono considerati come positivi, esempio 200 e 201.
+     * Crea un client per connettersi al Prestashop Webservice API.
+     * Sono due le informazioni necessarie:
+     * - l'URI base del sito, ovvero la parte dell'URL che rappresenta la root del sito (solitamente la stessa URL usata per la home del frontend)
+     * - la chiave API
      *
-     * @var int[]
+     * @param string $base_uri l'URI base del sito, ovvero la parte dell'URL che rappresenta la root del sito (solitamente la stessa URL usata per la home del frontend)
+     * @param string $key la chiave del servizio API
      */
-    protected $positiveStatusCodes;
-
-    public function __construct($base_uri, $key)
+    public function __construct(string $base_uri, string $key)
     {
         $this->key = $key;
-        $base_uri = trim($base_uri, '/').'/api/';
+        $base_uri = trim($base_uri, '/') . '/api/';
         $this->client = new \GuzzleHttp\Client(['base_uri' => $base_uri]);
         $this->lastRequestMethod = '';
         $this->lastRequestUri = '';
-        $this->positiveStatusCodes = [
-            200,
-            201
-        ];
     }
 
     /**
@@ -50,7 +63,7 @@ class Client {
      * @return SimpleXMLElement status_code, response
      * @throws PrestaShopWebserviceException
      */
-    protected function parseXML($body)
+    protected function parseXML(string $body): SimpleXMLElement
     {
         if ($body != '') {
             libxml_clear_errors();
@@ -74,35 +87,34 @@ class Client {
      * - altro: Qualsiasi tipo di codice errore al di fuori di 200 e 404, oppure un errore nel parsing del contenuto della risposta, risulta in una eccezione che fornisce dettagli sull'errore.
      * 
      * @param \Psr\Http\Message\ResponseInterface $response La risposta HTTP ricevuta in seguito a una richiesta.
-     * @return SimpleXMLElement|null Se tutto va bene e la risposta ha codice 200, viene restituito un SimpleXMLElement (un oggetto che rappresenta un XML). Se la risposta ha codice 404 viene restiuito NULL poiché la risorsa non esiste.
+     * @return SimpleXMLElement|null|bool Se tutto va bene e la risposta ha codice 200 con contenuto, viene restituito un SimpleXMLElement (un oggetto che rappresenta un XML). Se la risposta ha codice 404 viene restiuito NULL poiché la risorsa non esiste. Se la risposta ha codice 200 ma content-length = 0, allora restituisce 'true' poiché la richiesta ha avuto successo e non ci si aspetta informazioni di risposta (come nel caso di un DELETE).
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    protected function elaborateResponse(\Psr\Http\Message\ResponseInterface $response) {
+    protected function elaborateResponse(\Psr\Http\Message\ResponseInterface $response): SimpleXMLElement|null|bool
+    {
         $error = false;
         $message = 'UNKNOWN';
-        if($response->getStatusCode() == 404) {
+        $status_code = $response->getStatusCode();
+        if ($status_code == 404) {
             return null;
         }
-        /* In alcuni casi come richieste DELETE, la risposta è 200 OK senza contenuto, quindi se non ci aspettiamo niente nel body (Content-Length è zero) e riceviamo un OK allora la risposta è completata correttamente. */
-        else if($response->getStatusCode() == 200 && isset($response->getHeader('Content-Length')[0]) && $response->getHeader('Content-Length')[0] == 0) {
-            return null;
-        }
-        else {
+        /* In alcuni casi come richieste DELETE, la risposta è 200 OK senza contenuto, quindi se non ci aspettiamo niente nel body (Content-Length è zero) e riceviamo un OK allora la risposta è completata correttamente. */ else if ($status_code == 200 && isset($response->getHeader('Content-Length')[0]) && $response->getHeader('Content-Length')[0] == 0) {
+            return true;
+        } else {
             try {
                 $xml = $this->parseXML($response->getBody());
-                if(isset($xml->errors->error->message)) { //Non controlliamo il codice di errore, sembra stupido ma non si sa mai restituisce un codice 200 OK con un messaggio di errore nel contenuto...
+                if (isset($xml->errors->error->message)) { //Non controlliamo il codice di errore, sembra stupido ma non si sa mai restituisce un codice 200 OK con un messaggio di errore nel contenuto...
                     $message = (string) $xml->errors->error->message;
                     $error = true;
                 }
-            } catch (PrestashopResponseException $e){
+            } catch (PrestashopResponseException $e) {
                 $message = 'Errore nell\'analisi del contenuto della risposta.';
                 $error = true;
             }
         }
-        if(in_array($response->getStatusCode(), $this->positiveStatusCodes) && !$error) {
+        if ($status_code >= 200 && $status_code < 300 && !$error) {
             return $xml;
-        }
-        else {      
+        } else {
             throw new PrestashopClientException($response->getStatusCode(), $response->getReasonPhrase(), $this->lastRequestMethod, $this->lastRequestUri, $message);
         }
     }
@@ -117,14 +129,26 @@ class Client {
      * @return SimpleXMLElement|null Un XML se la risorsa è stata trovata, altrimenti NULL.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function get(string $uri, $params = []) {
+    public function get(string $uri, array $params = []): SimpleXMLElement|null|bool
+    {
         $this->lastRequestMethod = 'GET';
         $this->lastRequestUri = $uri;
         $response = $this->client->get($uri, $this->buildOptions($params));
         return $this->elaborateResponse($response);
     }
 
-    public function post($uri, $body) {
+    /**
+     * Esegue una richiesta POST.
+     * POST viene usato per creare una nuova risorsa, l'endpoint deve quindi essere sempre una risorsa, e non un elemento indicato dall'ID, esempio: {risorsa}, 'customers'.
+     * Non accetta parametri di query poiché il Prestashop WebService API non fornisce nessun parametro durante il POST.
+     * 
+     * @param string $uri l'endpoint che indica quale risorsa creare.
+     * @param string $body un XML sintatticamente e strutturalmente corretto rappresentato come stringa.
+     * @return SimpleXMLElement La nuova risorsa appena creata. NULL e BOOl non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
+     * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
+     */
+    public function post(string $uri, string $body): SimpleXMLElement|null|bool
+    {
         $this->lastRequestMethod = 'POST';
         $this->lastRequestUri = $uri;
         $options = $this->buildOptions();
@@ -133,7 +157,18 @@ class Client {
         return $this->elaborateResponse($response);
     }
 
-    public function put($uri, $body) {
+    /**
+     * Esegue una richiesta PUT.
+     * PUT viene usato per aggiornare una risorsa già esistente, l'endpoint deve specificare la risorsa e l'id dell'elemento da sovrascrivere, esempio: {risorsa}/{id}, 'customers/7'.
+     * Non accetta parametri di query poiché il Prestashop WebService API non fornisce nessun parametro durante il PUT.
+     *
+     * @param string $uri l'endpoint che indica quale elemento modificare.
+     * @param string $body un XML sintatticamente e strutturalmente corretto rappresentato come stringa.
+     * @return SimpleXMLElement La nuova risorsa appena modificata. NULL e BOOl non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
+     * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
+     */
+    public function put(string $uri, string $body): SimpleXMLElement|null|bool
+    {
         $this->lastRequestMethod = 'PUT';
         $this->lastRequestUri = $uri;
         $options = $this->buildOptions();
@@ -142,22 +177,39 @@ class Client {
         return $this->elaborateResponse($response);
     }
 
-    public function delete($uri) {
+    /**
+     * Esegue una richiesta DELETE.
+     * DELETE viene usato per cancellare un elemento di una risorsa, l'endpoint deve specificare la risorsa e l'id dell'elemento da cancellare. esempio: {risorsa}/{id}, 'customers/7'.
+     * La risposta nel caso di successo usa stato 200 ma non contiene un body.
+     *
+     * @param string $uri l'endpoint che indica quale elemento da cancellare.
+     * @return null|boolean 'true' se l'elemento è stato cancellato, NULL se non esiste.
+     * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
+     */
+    public function delete(string $uri): SimpleXMLElement|null|bool
+    {
         $this->lastRequestMethod = 'DELETE';
         $this->lastRequestUri = $uri;
         $response = $this->client->delete($uri, $this->buildOptions());
         return $this->elaborateResponse($response);
     }
 
-    protected function buildOptions($params = []) {
+    /**
+     * Crea un array con le opzioni standard, come l'autenticazione.
+     * Inoltre aggiunge eventuali parametri di query.
+     *
+     * @param array $params I parametri di query per la richiesta, opzionale.
+     * @return array Una lista di opzioni per la richiesta.
+     */
+    protected function buildOptions(array $params = []): array
+    {
         $options = [
             'auth' => [$this->key, ''],
             'http_errors' => false //Disattiva eccezioni della libreria, la gestiamo noi.
         ];
-        if(!empty($params)) {
+        if (!empty($params)) {
             $options['query'] = $params;
         }
         return $options;
     }
 }
-?>
