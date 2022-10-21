@@ -1,5 +1,5 @@
 {
-    "name": "up3up/client-prestashop",
+    "name": "up3up/prestashop-webservice-lib",
     "require": {
         "guzzlehttp/guzzle": "^7.0"
     },
