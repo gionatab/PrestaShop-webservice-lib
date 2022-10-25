@@ -1,9 +1,9 @@
 {
-    "name": "up3up/prestashop-webservice-lib",
+    "name": "up3up/prestashop/prestashop-webservice-lib",
     "require": {
         "guzzlehttp/guzzle": "^7.0"
     },
     "autoload": {
-        "psr-4": {"Up3Up\\PrestashopClient\\": ["src/PrestashopClient"]}
+        "psr-4": {"Up3Up\\Prestashop\\HttpClient": ["src/HttpClient"]}
     }
 }

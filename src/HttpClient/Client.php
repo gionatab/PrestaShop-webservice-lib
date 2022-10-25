@@ -1,10 +1,10 @@
 <?php
 
-namespace Up3Up\PrestashopClient;
+namespace Up3Up\Prestashop\HttpClient;
 
 use SimpleXMLElement;
-use Up3Up\PrestashopClient\Exceptions\PrestashopClientException;
-use Up3Up\PrestashopClient\Exceptions\PrestashopResponseException;
+use Up3Up\Prestashop\HttpClient\Exceptions\PrestashopClientException;
+use Up3Up\Prestashop\HttpClient\Exceptions\PrestashopResponseException;
 
 class Client
 {
