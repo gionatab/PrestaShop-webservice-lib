@@ -4,6 +4,6 @@
         "guzzlehttp/guzzle": "^7.0"
     },
     "autoload": {
-        "psr-4": {"Up3Up\\Prestashop\\HttpClient": ["src/HttpClient"]}
+        "psr-4": {"Up3Up\\Prestashop\\HttpClient\\": ["src/HttpClient"]}
     }
 }
