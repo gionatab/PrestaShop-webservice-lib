@@ -140,18 +140,19 @@ class Client
     /**
      * Esegue una richiesta POST.
      * POST viene usato per creare una nuova risorsa, l'endpoint deve quindi essere sempre una risorsa, e non un elemento indicato dall'ID, esempio: {risorsa}, 'customers'.
-     * Non accetta parametri di query poiché il Prestashop WebService API non fornisce nessun parametro durante il POST.
+     * I parametri servono soprattutto in multinegozio per indicare per quale id_shop o id_shop_group creare la risorsa.
      * 
      * @param string $uri l'endpoint che indica quale risorsa creare.
      * @param string $body un XML sintatticamente e strutturalmente corretto rappresentato come stringa.
-     * @return SimpleXMLElement La nuova risorsa appena creata. NULL e BOOl non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
+     * @param array  $params Con il multinegozio attivo, è possibile specificare in quale negozio o gruppo di negozi creare la risorsa. 
+     * @return SimpleXMLElement La nuova risorsa appena creata. NULL e BOOL non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function post(string $uri, string $body): SimpleXMLElement|null|bool
+    public function post(string $uri, string $body, array $params = []): SimpleXMLElement|null|bool
     {
         $this->lastRequestMethod = 'POST';
         $this->lastRequestUri = $uri;
-        $options = $this->buildOptions();
+        $options = $this->buildOptions($params);
         $options['body'] = $body;
         $response = $this->client->post($uri, $options);
         return $this->elaborateResponse($response);
@@ -160,18 +161,19 @@ class Client
     /**
      * Esegue una richiesta PUT.
      * PUT viene usato per aggiornare una risorsa già esistente, l'endpoint deve specificare la risorsa e l'id dell'elemento da sovrascrivere, esempio: {risorsa}/{id}, 'customers/7'.
-     * Non accetta parametri di query poiché il Prestashop WebService API non fornisce nessun parametro durante il PUT.
+     * I parametri servono soprattutto in multinegozio per indicare per quale id_shop o id_shop_group modificare la risorsa.
      *
      * @param string $uri l'endpoint che indica quale elemento modificare.
      * @param string $body un XML sintatticamente e strutturalmente corretto rappresentato come stringa.
-     * @return SimpleXMLElement La nuova risorsa appena modificata. NULL e BOOl non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
+     * @param array  $params Con il multinegozio attivo, è possibile specificare in quale negozio o gruppo di negozi modificare la risorsa. 
+     * @return SimpleXMLElement La nuova risorsa appena modificata. NULL e BOOL non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function put(string $uri, string $body): SimpleXMLElement|null|bool
+    public function put(string $uri, string $body, array $params = []): SimpleXMLElement|null|bool
     {
         $this->lastRequestMethod = 'PUT';
         $this->lastRequestUri = $uri;
-        $options = $this->buildOptions();
+        $options = $this->buildOptions($params);
         $options['body'] = $body;
         $response = $this->client->put($uri, $options);
         return $this->elaborateResponse($response);
@@ -184,13 +186,14 @@ class Client
      *
      * @param string $uri l'endpoint che indica quale elemento da cancellare.
      * @return null|boolean 'true' se l'elemento è stato cancellato, NULL se non esiste.
+     * @param array  $params Con il multinegozio attivo, è possibile specificare su quale negozio o gruppo di negozi cancellare la risorsa.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function delete(string $uri): SimpleXMLElement|null|bool
+    public function delete(string $uri, array $params = []): SimpleXMLElement|null|bool
     {
         $this->lastRequestMethod = 'DELETE';
         $this->lastRequestUri = $uri;
-        $response = $this->client->delete($uri, $this->buildOptions());
+        $response = $this->client->delete($uri, $this->buildOptions($params));
         return $this->elaborateResponse($response);
     }
 
