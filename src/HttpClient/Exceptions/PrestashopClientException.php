@@ -7,11 +7,13 @@ class PrestashopClientException extends Exception {
     protected $reasonPhrase;
     protected $method;
     protected $requestUrl;
-    public function __construct($HttpCode, $reasonPhrase, $method, $requestUrl, $errorMessage, \Throwable $previous = null)
+    protected $requestParams;
+    public function __construct($HttpCode, $reasonPhrase, $method, $requestUrl, $requestParams, $errorMessage, \Throwable $previous = null)
     {
         $this->reasonPhrase = $reasonPhrase;
         $this->method = $method;
         $this->requestUrl = $requestUrl;
+        $this->requestParams = $requestParams;
         parent::__construct($errorMessage, $HttpCode, $previous);
     }
 
@@ -25,5 +27,9 @@ class PrestashopClientException extends Exception {
 
     public function getRequestUrl() {
         return $this->requestUrl;
+    }
+
+    public function getRequestParams() {
+        return $this->requestParams;
     }
 }

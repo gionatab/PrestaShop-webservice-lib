@@ -38,6 +38,13 @@ class Client
     protected $lastRequestUri;
 
     /**
+     * Viene salvata l'ultima lista di parametri
+     *
+     * @var string[]
+     */
+    protected $lastRequestParams;
+
+    /**
      * Crea un client per connettersi al Prestashop Webservice API.
      * Sono due le informazioni necessarie:
      * - l'URI base del sito, ovvero la parte dell'URL che rappresenta la root del sito (solitamente la stessa URL usata per la home del frontend)
@@ -115,7 +122,7 @@ class Client
         if ($status_code >= 200 && $status_code < 300 && !$error) {
             return $xml;
         } else {
-            throw new PrestashopClientException($response->getStatusCode(), $response->getReasonPhrase(), $this->lastRequestMethod, $this->lastRequestUri, $message);
+            throw new PrestashopClientException($response->getStatusCode(), $response->getReasonPhrase(), $this->lastRequestMethod, $this->lastRequestUri, $this->lastRequestParams, $message);
         }
     }
 
@@ -133,7 +140,9 @@ class Client
     {
         $this->lastRequestMethod = 'GET';
         $this->lastRequestUri = $uri;
-        $response = $this->client->get($uri, $this->buildOptions($params));
+        $options = $this->buildOptions($params);
+        $this->lastRequestParams = $options;
+        $response = $this->client->get($uri, $options);
         return $this->elaborateResponse($response);
     }
 
@@ -154,6 +163,7 @@ class Client
         $this->lastRequestUri = $uri;
         $options = $this->buildOptions($params);
         $options['body'] = $body;
+        $this->lastRequestParams = $options;
         $response = $this->client->post($uri, $options);
         return $this->elaborateResponse($response);
     }
@@ -175,6 +185,7 @@ class Client
         $this->lastRequestUri = $uri;
         $options = $this->buildOptions($params);
         $options['body'] = $body;
+        $this->lastRequestParams = $options;
         $response = $this->client->put($uri, $options);
         return $this->elaborateResponse($response);
     }
@@ -193,7 +204,9 @@ class Client
     {
         $this->lastRequestMethod = 'DELETE';
         $this->lastRequestUri = $uri;
-        $response = $this->client->delete($uri, $this->buildOptions($params));
+        $options = $this->buildOptions($params);
+        $this->lastRequestParams = $options;
+        $response = $this->client->delete($uri, $options);
         return $this->elaborateResponse($response);
     }
 
