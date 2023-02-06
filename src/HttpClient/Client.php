@@ -141,7 +141,7 @@ class Client
         $this->lastRequestMethod = 'GET';
         $this->lastRequestUri = $uri;
         $options = $this->buildOptions($params);
-        $this->lastRequestParams = $options;
+        $this->lastRequestParams = $params;
         $response = $this->client->get($uri, $options);
         return $this->elaborateResponse($response);
     }
@@ -163,7 +163,7 @@ class Client
         $this->lastRequestUri = $uri;
         $options = $this->buildOptions($params);
         $options['body'] = $body;
-        $this->lastRequestParams = $options;
+        $this->lastRequestParams = $params;
         $response = $this->client->post($uri, $options);
         return $this->elaborateResponse($response);
     }
@@ -185,7 +185,7 @@ class Client
         $this->lastRequestUri = $uri;
         $options = $this->buildOptions($params);
         $options['body'] = $body;
-        $this->lastRequestParams = $options;
+        $this->lastRequestParams = $params;
         $response = $this->client->put($uri, $options);
         return $this->elaborateResponse($response);
     }
@@ -205,7 +205,7 @@ class Client
         $this->lastRequestMethod = 'DELETE';
         $this->lastRequestUri = $uri;
         $options = $this->buildOptions($params);
-        $this->lastRequestParams = $options;
+        $this->lastRequestParams = $params;
         $response = $this->client->delete($uri, $options);
         return $this->elaborateResponse($response);
     }
