@@ -182,8 +182,6 @@ class Client
             return true;
         } else {
             try {
-                $response_body = $response->getBody();
-                file_put_contents(__DIR__.'/../../test/body.txt', (string) $response_body);
                 $xml = $this->parseXML($response->getBody());
                 if (isset($xml->errors->error->message)) { //Non controlliamo il codice di errore, sembra stupido ma non si sa mai restituisce un codice 200 OK con un messaggio di errore nel contenuto...
                     $message = (string) $xml->errors->error->message;
