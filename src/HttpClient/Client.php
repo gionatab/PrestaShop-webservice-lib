@@ -2,7 +2,9 @@
 
 namespace Up3Up\Prestashop\HttpClient;
 
+use GuzzleHttp\TransferStats;
 use SimpleXMLElement;
+use TypeError;
 use Up3Up\Prestashop\HttpClient\Exceptions\PrestashopClientException;
 use Up3Up\Prestashop\HttpClient\Exceptions\PrestashopResponseException;
 
@@ -45,6 +47,12 @@ class Client
     protected $lastRequestParams;
 
     /**
+     * Salva le statistiche relative all'ultima richiesta
+     *
+     * @var TransferStats
+     */
+    protected $lastRequestStats;
+    /**
      * Crea un client per connettersi al Prestashop Webservice API.
      * Sono due le informazioni necessarie:
      * - l'URI base del sito, ovvero la parte dell'URL che rappresenta la root del sito (solitamente la stessa URL usata per la home del frontend)
@@ -63,18 +71,68 @@ class Client
     }
 
     /**
-     * Load XML from string. Can throw exception
+     * Fornisce accesso all'oggetto TranserStats relativo all'ultima richiesta. 
+     * In questo modo è possibile accedere a tutte le statistiche relative alla richiesta appena completata.
      *
-     * @param string $response String from a CURL response
+     * @return TransferStats|bool l'oggetto contenente le statistiche dell'ultima richiesta, o FALSE se tale oggetto non è impostato.
+     */
+    public function getStatsObj(): TransferStats|bool
+    {
+        if(! $this->lastRequestStats instanceof TransferStats) {
+            return false;
+        }
+        return $this->lastRequestStats;
+    }
+
+    /**
+     * Permette di accedere al valore di una statistica salvata nell'oggetto TransferStats.
+     * $stat deve essere una stringa rappresentante il nome della statistica, con le parole separate dal trattino, '-'.
+     * Es. per ottenere il tempo di esecuzione della richiesta, bisogna chiamare la funzione TransferStats::getTransferTime(). 
+     * Usando invece getStats è possibile ottenere il valore del tempo di esecuzione con la seguente chiamata: getStats('transfer-time');
+     * 
+     * Nomi di alcune statistiche:
+     * - transfer-time: tempo di esecuzione richiesta;
+     * - effective-uri: l'URI completo della richiesta, compreso di uri base (l'indirizzo del sito o hostname, solitamente).
      *
-     * @return SimpleXMLElement status_code, response
-     * @throws PrestaShopWebserviceException
+     * @param  string $stat Il nome della statistica da prendere, con le parole separate dal trattino '-'.
+     * @param  bool   $toString TRUE se la statistica deve essere data come stringa (alcune statistiche sono oggetti), FALSE per ottenere la statistica nativa.
+     * 
+     * @return mixed Il valore della statistica, NULL se l'oggetto delle statistiche non è impostato, FALSE se la funzione dell'oggetto ha avuto un errore (es. se la statistica non esiste).
+     */
+    public function getStats(string $stat, bool $toString = true): mixed
+    {
+        if(! $this->lastRequestStats instanceof TransferStats) {
+            return null;
+        }
+        $parts = explode('-', trim($stat));
+        $functionName = "get";
+        foreach($parts as $part) {
+            $functionName .= ucfirst($part);
+        }
+        try {
+            $result =  call_user_func([$this->lastRequestStats, $functionName]);
+            return $toString ? (string) $result : $result;
+        }
+        catch(TypeError $ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Load XML from string.
+     * Can throw exceptions, usually if the string can't be parsed.
+     *
+     * @param string $response String from an HTTP response
+     *
+     * @return SimpleXMLElement The body of the response parsed as XML.
+     * @throws PrestashopResponseException
      */
     protected function parseXML(string $body): SimpleXMLElement
     {
         if ($body != '') {
             libxml_clear_errors();
             libxml_use_internal_errors(true);
+            $body = $this->cleanXMLString($body);
             $xml = simplexml_load_string(trim($body), 'SimpleXMLElement', LIBXML_NOCDATA);
             if (libxml_get_errors()) {
                 $msg = var_export(libxml_get_errors(), true);
@@ -86,6 +144,21 @@ class Client
             throw new PrestashopResponseException('HTTP XML response is empty');
         }
     }
+
+    /**
+     * Fixes parsing errors from SimpleXML when trying to parse a string in UTF-8 with non-supported characters.
+     * 
+     * It does not check if the string is well formatted for XML.
+     *
+     * @param  string $string Any string that should be "cleaned" of non-supported characters for the XML format
+     *
+     * @return string a cleaned string that can be parsed to XML.
+     */
+    protected function cleanXMLString(string $string): string
+    {
+        return preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $string);
+    }
+
 
     /**
      * Prende la risposta ricevuta dalla richiesta, e la divide in 3 casi in base al codice della risposta:
@@ -109,6 +182,8 @@ class Client
             return true;
         } else {
             try {
+                $response_body = $response->getBody();
+                file_put_contents(__DIR__.'/../../test/body.txt', (string) $response_body);
                 $xml = $this->parseXML($response->getBody());
                 if (isset($xml->errors->error->message)) { //Non controlliamo il codice di errore, sembra stupido ma non si sa mai restituisce un codice 200 OK con un messaggio di errore nel contenuto...
                     $message = (string) $xml->errors->error->message;
@@ -221,7 +296,10 @@ class Client
     {
         $options = [
             'auth' => [$this->key, ''],
-            'http_errors' => false //Disattiva eccezioni della libreria, la gestiamo noi.
+            'http_errors' => false, //Disattiva eccezioni della libreria, la gestiamo noi.
+            'on_stats' => function (TransferStats $stats) {
+                $this->lastRequestStats = $stats;
+            }
         ];
         if (!empty($params)) {
             $options['query'] = $params;
