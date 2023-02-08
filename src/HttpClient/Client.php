@@ -185,7 +185,6 @@ class Client
             $content_type = $response->getHeader('Content-Type')[0];
             $content_type = explode(';',$content_type)[0]; //Prendere la prima parte, la seconda parte se presente indica la codifica caratteri
             try {
-                echo $content_type.PHP_EOL;
                 if($content_type == 'text/xml') {
                     $content = $this->parseXML($response->getBody());
                     if (isset($content->errors->error->message)) { //Non controlliamo il codice di errore, sembra stupido ma non si sa mai restituisce un codice 200 OK con un messaggio di errore nel contenuto...
