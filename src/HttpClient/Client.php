@@ -77,7 +77,7 @@ class Client
      *
      * @return TransferStats|bool l'oggetto contenente le statistiche dell'ultima richiesta, o FALSE se tale oggetto non è impostato.
      */
-    public function getStatsObj(): mixed
+    public function getStatsObj()
     {
         if(! $this->lastRequestStats instanceof TransferStats) {
             return false;
@@ -100,7 +100,7 @@ class Client
      * 
      * @return mixed Il valore della statistica, NULL se l'oggetto delle statistiche non è impostato, FALSE se la funzione dell'oggetto ha avuto un errore (es. se la statistica non esiste).
      */
-    public function getStats(string $stat, bool $toString = true): mixed
+    public function getStats(string $stat, bool $toString = true)
     {
         if(! $this->lastRequestStats instanceof TransferStats) {
             return null;
@@ -128,7 +128,7 @@ class Client
      * @return SimpleXMLElement The body of the response parsed as XML.
      * @throws PrestashopResponseException
      */
-    protected function parseXML(string $body): SimpleXMLElement
+    protected function parseXML(string $body)
     {
         if ($body != '') {
             libxml_clear_errors();
@@ -155,7 +155,7 @@ class Client
      *
      * @return string a cleaned string that can be parsed to XML.
      */
-    protected function cleanXMLString(string $string): string
+    protected function cleanXMLString(string $string)
     {
         return preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $string);
     }
@@ -171,7 +171,7 @@ class Client
      * @return mixed Se tutto va bene e la risposta ha codice 200 con contenuto, viene restituito un SimpleXMLElement (un oggetto che rappresenta un XML) o un JSON (un array associativo). Se la risposta ha codice 404 viene restiuito NULL poiché la risorsa non esiste. Se la risposta ha codice 200 ma content-length = 0, allora restituisce TRUE poiché la richiesta ha avuto successo e non ci si aspetta informazioni di risposta (come nel caso di un DELETE).
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    protected function elaborateResponse(\Psr\Http\Message\ResponseInterface $response): mixed
+    protected function elaborateResponse(\Psr\Http\Message\ResponseInterface $response)
     {
         $error = false;
         $message = 'UNKNOWN';
@@ -225,7 +225,7 @@ class Client
      * @return mixed Un XML o JSON se la risorsa è stata trovata, altrimenti NULL.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function get(string $uri, array $params = []): mixed
+    public function get(string $uri, array $params = [])
     {
         $this->lastRequestMethod = 'GET';
         $this->lastRequestUri = $uri;
@@ -253,7 +253,7 @@ class Client
      *
      * @return array|null La lista delle risposte completate. Le richieste che non sono state completate (di cui non si ha ricevuto risposta) hanno la risposta omessa dalla lista. NULL nel caso non ci sia nessuna richiesta operabile in $requests.
      */
-    public function getConcurrent(array $requests, int $limit = 25): mixed
+    public function getConcurrent(array $requests, int $limit = 25)
     {
         $promises = [];
         foreach($requests as $request) {
@@ -290,7 +290,7 @@ class Client
      *
      * @return array La lista delle risposte completate.
      */
-    public function getConcurrentFake(array $requests) : array
+    public function getConcurrentFake(array $requests)
     {
         $results = [];
         foreach($requests as $request) {
@@ -315,7 +315,7 @@ class Client
      * @return SimpleXMLElement La nuova risorsa appena creata. NULL e BOOL non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function post(string $uri, string $body, array $params = []): mixed
+    public function post(string $uri, string $body, array $params = [])
     {
         $this->lastRequestMethod = 'POST';
         $this->lastRequestUri = $uri;
@@ -337,7 +337,7 @@ class Client
      * @return SimpleXMLElement La nuova risorsa appena modificata. NULL e BOOL non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function put(string $uri, string $body, array $params = []): mixed
+    public function put(string $uri, string $body, array $params = [])
     {
         $this->lastRequestMethod = 'PUT';
         $this->lastRequestUri = $uri;
@@ -358,7 +358,7 @@ class Client
      * @param array  $params Con il multinegozio attivo, è possibile specificare su quale negozio o gruppo di negozi cancellare la risorsa.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function delete(string $uri, array $params = []): mixed
+    public function delete(string $uri, array $params = [])
     {
         $this->lastRequestMethod = 'DELETE';
         $this->lastRequestUri = $uri;
@@ -375,7 +375,7 @@ class Client
      * @param array $params I parametri di query per la richiesta, opzionale.
      * @return array Una lista di opzioni per la richiesta.
      */
-    protected function buildOptions(array $params = []): array
+    protected function buildOptions(array $params = [])
     {
         $options = [
             'auth' => [$this->key, ''],
