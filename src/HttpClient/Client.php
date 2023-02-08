@@ -167,10 +167,10 @@ class Client
      * - altro: Qualsiasi tipo di codice errore al di fuori di 200 e 404, oppure un errore nel parsing del contenuto della risposta, risulta in una eccezione che fornisce dettagli sull'errore.
      * 
      * @param \Psr\Http\Message\ResponseInterface $response La risposta HTTP ricevuta in seguito a una richiesta.
-     * @return SimpleXMLElement|null|bool Se tutto va bene e la risposta ha codice 200 con contenuto, viene restituito un SimpleXMLElement (un oggetto che rappresenta un XML). Se la risposta ha codice 404 viene restiuito NULL poiché la risorsa non esiste. Se la risposta ha codice 200 ma content-length = 0, allora restituisce 'true' poiché la richiesta ha avuto successo e non ci si aspetta informazioni di risposta (come nel caso di un DELETE).
+     * @return mixed Se tutto va bene e la risposta ha codice 200 con contenuto, viene restituito un SimpleXMLElement (un oggetto che rappresenta un XML) o un JSON (un array associativo). Se la risposta ha codice 404 viene restiuito NULL poiché la risorsa non esiste. Se la risposta ha codice 200 ma content-length = 0, allora restituisce TRUE poiché la richiesta ha avuto successo e non ci si aspetta informazioni di risposta (come nel caso di un DELETE).
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    protected function elaborateResponse(\Psr\Http\Message\ResponseInterface $response): SimpleXMLElement|null|bool
+    protected function elaborateResponse(\Psr\Http\Message\ResponseInterface $response): mixed
     {
         $error = false;
         $message = 'UNKNOWN';
@@ -178,14 +178,30 @@ class Client
         if ($status_code == 404) {
             return null;
         }
-        /* In alcuni casi come richieste DELETE, la risposta è 200 OK senza contenuto, quindi se non ci aspettiamo niente nel body (Content-Length è zero) e riceviamo un OK allora la risposta è completata correttamente. */ else if ($status_code == 200 && isset($response->getHeader('Content-Length')[0]) && $response->getHeader('Content-Length')[0] == 0) {
+        /* In alcuni casi come richieste DELETE, la risposta è 200 OK senza contenuto, quindi se non ci aspettiamo niente nel body (Content-Length è zero) e riceviamo un OK allora la risposta è completata correttamente. */ 
+        else if ($status_code == 200 && isset($response->getHeader('Content-Length')[0]) && $response->getHeader('Content-Length')[0] == 0) {
             return true;
         } else {
+            $content_type = $response->getHeader('Content-Type')[0];
+            $content_type = explode(';',$content_type)[0]; //Prendere la prima parte, la seconda parte se presente indica la codifica caratteri
             try {
-                $xml = $this->parseXML($response->getBody());
-                if (isset($xml->errors->error->message)) { //Non controlliamo il codice di errore, sembra stupido ma non si sa mai restituisce un codice 200 OK con un messaggio di errore nel contenuto...
-                    $message = (string) $xml->errors->error->message;
-                    $error = true;
+                echo $content_type.PHP_EOL;
+                if($content_type == 'text/xml') {
+                    $content = $this->parseXML($response->getBody());
+                    if (isset($content->errors->error->message)) { //Non controlliamo il codice di errore, sembra stupido ma non si sa mai restituisce un codice 200 OK con un messaggio di errore nel contenuto...
+                        $message = (string) $content->errors->error->message;
+                        $error = true;
+                    }
+                } 
+                else if($content_type == 'application/json') {
+                    $content = json_decode($response->getBody(), true);
+                    if(isset($content['errors'])) {
+                        $message = (string) $content['errors'][0]['message'];
+                        $error = true;
+                    }
+                }
+                else {
+                    $content = $response->getBody(); //Non elaboriamo la risposta se il MIME non è supportato.
                 }
             } catch (PrestashopResponseException $e) {
                 $message = 'Errore nell\'analisi del contenuto della risposta.';
@@ -193,7 +209,7 @@ class Client
             }
         }
         if ($status_code >= 200 && $status_code < 300 && !$error) {
-            return $xml;
+            return $content;
         } else {
             throw new PrestashopClientException($response->getStatusCode(), $response->getReasonPhrase(), $this->lastRequestMethod, $this->lastRequestUri, $this->lastRequestParams, $message);
         }
@@ -206,10 +222,10 @@ class Client
      *
      * @param string $uri l'endpoint che indica quale risorsa/elemento richiedere.
      * @param array $params eventuali parametri della query
-     * @return SimpleXMLElement|null Un XML se la risorsa è stata trovata, altrimenti NULL.
+     * @return mixed Un XML o JSON se la risorsa è stata trovata, altrimenti NULL.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function get(string $uri, array $params = []): SimpleXMLElement|null|bool
+    public function get(string $uri, array $params = []): mixed
     {
         $this->lastRequestMethod = 'GET';
         $this->lastRequestUri = $uri;
