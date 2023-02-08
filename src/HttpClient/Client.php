@@ -77,7 +77,7 @@ class Client
      *
      * @return TransferStats|bool l'oggetto contenente le statistiche dell'ultima richiesta, o FALSE se tale oggetto non è impostato.
      */
-    public function getStatsObj(): TransferStats|bool
+    public function getStatsObj(): mixed
     {
         if(! $this->lastRequestStats instanceof TransferStats) {
             return false;
@@ -253,7 +253,7 @@ class Client
      *
      * @return array|null La lista delle risposte completate. Le richieste che non sono state completate (di cui non si ha ricevuto risposta) hanno la risposta omessa dalla lista. NULL nel caso non ci sia nessuna richiesta operabile in $requests.
      */
-    public function getConcurrent(array $requests, int $limit = 25): array|null
+    public function getConcurrent(array $requests, int $limit = 25): mixed
     {
         $promises = [];
         foreach($requests as $request) {
@@ -315,7 +315,7 @@ class Client
      * @return SimpleXMLElement La nuova risorsa appena creata. NULL e BOOL non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function post(string $uri, string $body, array $params = []): SimpleXMLElement|null|bool
+    public function post(string $uri, string $body, array $params = []): mixed
     {
         $this->lastRequestMethod = 'POST';
         $this->lastRequestUri = $uri;
@@ -337,7 +337,7 @@ class Client
      * @return SimpleXMLElement La nuova risorsa appena modificata. NULL e BOOL non dovrebbero mai essere restituiti a meno che qualcosa non sia andato storto sul server.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function put(string $uri, string $body, array $params = []): SimpleXMLElement|null|bool
+    public function put(string $uri, string $body, array $params = []): mixed
     {
         $this->lastRequestMethod = 'PUT';
         $this->lastRequestUri = $uri;
@@ -358,7 +358,7 @@ class Client
      * @param array  $params Con il multinegozio attivo, è possibile specificare su quale negozio o gruppo di negozi cancellare la risorsa.
      * @throws PrestashopClientException Fornisce informazioni su cosa è andato storto nella richiesta e/o nella lettura della risposta.
      */
-    public function delete(string $uri, array $params = []): SimpleXMLElement|null|bool
+    public function delete(string $uri, array $params = []): mixed
     {
         $this->lastRequestMethod = 'DELETE';
         $this->lastRequestUri = $uri;
