@@ -251,9 +251,9 @@ class Client
      * @param  array $requests Un array in cui ogni elemento è una coppia di chiavi 'uri' e 'params' (opzionale) che definisce ogni richiesta da eseguire.
      * @param  int   $limit Il numero di richieste da eseguire in contemporanea.
      *
-     * @return array La lista delle risposte completate. Le richieste che non sono state completate (di cui non si ha ricevuto risposta) hanno la risposta omessa dalla lista.
+     * @return array|null La lista delle risposte completate. Le richieste che non sono state completate (di cui non si ha ricevuto risposta) hanno la risposta omessa dalla lista. NULL nel caso non ci sia nessuna richiesta operabile in $requests.
      */
-    public function getConcurrent(array $requests, int $limit = 25): array 
+    public function getConcurrent(array $requests, int $limit = 25): array|null
     {
         $promises = [];
         foreach($requests as $request) {
