@@ -2,6 +2,7 @@
 
 namespace Up3Up\Prestashop\HttpClient;
 
+use GuzzleHttp\Promise;
 use GuzzleHttp\TransferStats;
 use SimpleXMLElement;
 use TypeError;
@@ -232,6 +233,75 @@ class Client
         $this->lastRequestParams = $params;
         $response = $this->client->get($uri, $options);
         return $this->elaborateResponse($response);
+    }
+
+    /**
+     * Esegue molteplici richieste GET in contemporanea (asincrone).
+     * Il vantaggio è che invece di dover aspettare il completamento della richiesta corrente per far partire quella successiva,
+     * richieste asincrone vengono inviate tutte nello stesso momento.
+     *
+     * Per non sovraccaricare i server, viene imposto un limite a quante richieste devono essere inviate in una volta, indicato da $limit.
+     * 
+     * Ogni richiesta è una coppia di chiavi, 'uri' indica l'endpoint a cui fare la richiesta, 'params' indica i parametri aggiuntivi della richiesta (è opzionale).
+     * 
+     * L'esecuzione non si ferma se una richiesta fallisce, ma si ferma se si riceve una risposta di cui non è possibile fare il parsing, con eccezione da Client::elaborateResponse().
+     * 
+     * Infine, da tenere a mente che non viene fornito un modo per mappare le risposte alle richieste nella lista risultante.
+     * 
+     * @param  array $requests Un array in cui ogni elemento è una coppia di chiavi 'uri' e 'params' (opzionale) che definisce ogni richiesta da eseguire.
+     * @param  int   $limit Il numero di richieste da eseguire in contemporanea.
+     *
+     * @return array La lista delle risposte completate. Le richieste che non sono state completate (di cui non si ha ricevuto risposta) hanno la risposta omessa dalla lista.
+     */
+    public function getConcurrent(array $requests, int $limit = 25): array 
+    {
+        $promises = [];
+        foreach($requests as $request) {
+            if(!isset($request['uri'])) {
+                continue;
+            }
+            $uri = $request['uri'];
+            $params = $request['params'] ?? [];
+            $options = $this->buildOptions($params);
+            $promises[] = $this->client->getAsync($uri, $options);
+        }
+        if(empty($promises)) {
+            return null;
+        }
+        $batches = array_chunk($promises, $limit); //Mettiamo un limite arbitrario al numero di richieste in contemporanea.
+        $results = [];
+        foreach($batches as $batch) {
+            $responses = Promise\Utils::settle($batch)->wait();
+            foreach($responses as $response) {
+                if($response['state'] == 'fulfilled') {
+                    $results[] = $this->elaborateResponse($response['value']);
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Esegue molteplici richieste GET in sequenza.
+     * La differenza rispetto a Client::getConcurrent() è che le richieste non sono asincrone.
+     * 
+     *
+     * @param  array $requests Un array in cui ogni elemento è una coppia di chiavi 'uri' e 'params' (opzionale) che definisce ogni richiesta da eseguire.
+     *
+     * @return array La lista delle risposte completate.
+     */
+    public function getConcurrentFake(array $requests) : array
+    {
+        $results = [];
+        foreach($requests as $request) {
+            if(!isset($request['uri'])) {
+                continue;
+            }
+            $uri = $request['uri'];
+            $params = $request['params'] ?? [];
+            $results[] = $this->get($uri, $params);
+        }
+        return $results;
     }
 
     /**
