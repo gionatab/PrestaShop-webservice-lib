@@ -41,6 +41,13 @@ class Client
     protected $lastRequestUri;
 
     /**
+     * Url base da usare per le richieste
+     *
+     * @var string
+     */
+    protected $baseUri;
+
+    /**
      * Viene salvata l'ultima lista di parametri
      *
      * @var string[]
@@ -66,6 +73,7 @@ class Client
     {
         $this->key = $key;
         $base_uri = trim($base_uri, '/') . '/api/';
+        $this->baseUri = $base_uri;
         $this->client = new \GuzzleHttp\Client(['base_uri' => $base_uri]);
         $this->lastRequestMethod = '';
         $this->lastRequestUri = '';
@@ -211,7 +219,7 @@ class Client
         if ($status_code >= 200 && $status_code < 300 && !$error) {
             return $content;
         } else {
-            throw new PrestashopClientException($response->getStatusCode(), $response->getReasonPhrase(), $this->lastRequestMethod, $this->lastRequestUri, $this->lastRequestParams, $message);
+            throw new PrestashopClientException($response->getStatusCode(), $response->getReasonPhrase(), $this->lastRequestMethod, $this->lastRequestUri, $this->baseUri, $this->lastRequestParams, $message);
         }
     }
 
